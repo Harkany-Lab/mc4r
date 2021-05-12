@@ -1,0 +1,9 @@
+sample	age	condition	ncells	fullname	name	libbatch	seqbatch	perfussed	sex	nt	sn	date	date10x
+FC2E15	E15	FC2	662	Hypothalamus_traject_E15	S1	2	2	0	mixed	8	0	03.11.2017	27.02.2018
+FC2E17	E17	FC2	700	Hypothalamus_traject_E17	S2	2	2	0	mixed	7	0	05.11.2017	27.02.2018
+FC2P00	P00	FC2	450	Hypothalamus_traject_P0	S3	2	2	0	mixed	4	0	07.11.2017	27.02.2018
+FC2P02	P02	FC2	390	Hypothalamus_traject_P2	S4	2	2	0	mixed	4	0	09.11.2017	27.02.2018
+FC3P02	P02	FC3	511	Hypothalamus_traject_3P2	S5	3	3	0	mixed	4	0	09.11.2017	06.08.2018
+FC1P10	P10	FC1	400	Hypothalamus_traject_1P10	S6	1	1	1	mixed	3	0	10.11.2017	10.11.2017
+FC2P10	P10	FC2	217	Hypothalamus_traject_P10	S7	2	2	1	mixed	3	0	10.11.2017	27.02.2018
+FC2P23	P23	FC2	105	Hypothalamus_traject_P23	S8	2	2	1	mixed	3	0	23.11.2017	27.02.2018

@@ -1,0 +1,571 @@
+---
+title: "Mc4r in postnatal mouse PVN"
+author: "Evgenii Tretiakov"
+date: "5/10/2021"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+DOCNAME = "01-onecut3"
+NOW <- Sys.time()
+
+# Time chunks during knitting
+knitr::knit_hooks$set(timeit = function(before) {
+    if (before) {
+        print(paste("Start:", Sys.time()))
+        NOW <<- Sys.time()
+    } else {
+        print(paste("Stop:", Sys.time()))
+        print(Sys.time() - NOW)
+    }
+})
+
+knitr::knit_hooks$set(debug = function(before, options, envir) {
+  if (!before) {
+    message(
+      paste(names(envir), as.list(envir),
+            sep = " = ", collapse = "\n"))
+  }
+})
+
+knitr::opts_chunk$set(
+    autodep        = TRUE,
+    cache          = FALSE,
+    cache.path     = paste0("cache/", DOCNAME, "/"),
+    cache.comments = FALSE,
+    cache.lazy     = FALSE,
+    dev            = c("pdf", "png"),
+    debug          = TRUE,
+    echo           = TRUE,
+    error          = FALSE,
+    fig.align      = "center",
+    fig.width      = 14,
+    fig.height     = 12,
+    message        = FALSE,
+    warning        = FALSE,
+    timeit         = TRUE
+)
+
+# Load tidyverse infrastructure packages
+suppressPackageStartupMessages({
+    library(here)
+    library(tidyverse)
+    library(magrittr)
+    library(future)
+})
+
+if (!requireNamespace("glmGamPoi", quietly = TRUE)) BiocManager::install("glmGamPoi")
+if (!requireNamespace("Nebulosa", quietly = TRUE)) BiocManager::install("Nebulosa")
+if (!requireNamespace("limma", quietly = TRUE)) BiocManager::install('limma')
+# Load packages for scRNA-seq analysis and visualisation
+suppressPackageStartupMessages({
+    library(Seurat)
+    library(SeuratWrappers)
+    library(SeuratDisk)
+    library(sctransform)
+    library(glmGamPoi)
+    library(UpSetR)
+    library(patchwork)
+    library(Nebulosa)
+})
+
+# reticulate::conda_create(envname = "mc4r_py38", 
+#                          packages = c("python-igraph", 
+#                                       "leidenalg", 
+#                                       "numpy", 
+#                                       "pandas"), 
+#                          channel = c("vtraag", "conda-forge"))
+# reticulate::use_condaenv(condaenv = "mc4r_py38", required = TRUE)
+
+# Set paths
+src_dir    <- here::here('code')
+data_dir   <- here::here('data')
+output_dir <- here::here('output')
+plots_dir  <- here::here(output_dir, 'figures')
+tables_dir <- here::here(output_dir, 'tables')
+source(here::here(src_dir, 'main.R'))
+source(here::here(src_dir, 'genes.R'))
+
+# set seed
+reseed <- 42
+set.seed(seed = reseed)
+
+# available cores
+n.cores <- 12
+
+# Parameters for parallel execution
+plan("multiprocess", workers = n.cores)
+options(future.globals.maxSize = Inf,
+        future.rng.onMisuse = "ignore")
+plan()
+
+```
+
+## Load in data
+
+```{r load_sc-hypothalamus}
+# Load in data
+samples_df <- read_tsv(here::here(data_dir, "samples.tsv"))
+rar2020.srt.pub <- readr::read_rds(file.path(data_dir, "oldCCA_nae_srt.rds"))
+rar2020.srt.pub %<>% UpdateSeuratObject() 
+colnames(rar2020.srt.pub@reductions$umap@cell.embeddings) <- c('UMAP_1', 'UMAP_2')
+# Consistent colours and clusters names
+rar2020.srt.pub$wtree <- factor(rar2020.srt.pub$wtree,
+                                levels  = 1:45,
+                                ordered = TRUE)
+colours <- readr::read_lines(here(data_dir, "colours_wtree.tsv"))
+clrlev <- levels(rar2020.srt.pub$wtree)
+names(colours) <- clrlev
+rar2020.clusters.neuro.invert <- 
+    as.character(c(1, 2, 3, 4, 5, 6, 7, 8, 9, 38, 42, 45))
+# Dev. Stages
+rar2020.ages.all <- c('E15', 'E17', 'P00', 'P02', 'P10', 'P23')
+rar2020.ages.postnat <-                         c('P10', 'P23')
+
+# Subset
+# stage
+rar2020.srt.pub$orig.ident <-
+    rar2020.srt.pub %>%
+    colnames() %>%
+    str_split(pattern = ':', simplify = TRUE) %>% .[, 1] %>% 
+    plyr::mapvalues(x    = .,
+                    from = samples_df$fullname,
+                    to   = samples_df$sample)
+rar2020.srt.pub$samples <- factor(rar2020.srt.pub$orig.ident)
+rar2020.srt.pub$samples %>% summary()
+rar2020.srt.pub$age <-
+        plyr::mapvalues(x    = rar2020.srt.pub$orig.ident,
+                        from = samples_df$sample,
+                        to   = samples_df$age)
+Idents(rar2020.srt.pub) <-
+    factor(rar2020.srt.pub$age,
+           levels  = rar2020.ages.all,
+           ordered = TRUE)
+rar2020.srt.pub$age <- Idents(rar2020.srt.pub)
+rar2020.srt.pub$age %>% summary()
+rar2020.srt.pub$postnatal <-
+    rar2020.srt.pub$age %in% rar2020.ages.postnat
+rar2020.srt.pub <- subset(rar2020.srt.pub, 
+                          subset = postnatal == TRUE)
+# clusters of PVN
+Idents(rar2020.srt.pub) <- rar2020.srt.pub$wtree
+DimPlot(rar2020.srt.pub, label = TRUE, cols = colours) + NoLegend()
+DimPlot(rar2020.srt.pub, label = TRUE, cols = colours, split.by = "samples") + NoLegend()
+# rar2020.srt.neuro <-  
+#     subsetSrt(dat.srt = rar2020.srt.pub,
+#               srt.name = "Neuronal clusters of P10/23 mice",
+#               idents = rar2020.clusters.neuro.invert,
+#               invert = TRUE)
+# rar2020.srt.neuro.list <- 
+#     SplitObject(rar2020.srt.neuro, split.by = "orig.ident")
+# for (i in 1:length(rar2020.srt.neuro.list)) {
+#   rar2020.srt.neuro.list[[i]] %<>% 
+#         SCTransform(seed.use = reseed,
+#                     method = "glmGamPoi",
+#                     verbose = FALSE)
+# }
+
+rar2020.srt.pvn <- 
+    subsetSrt(dat.srt = rar2020.srt.pub,
+              srt.name = "Neuronal clusters of PVN P10/23 mice",
+              idents = c(15, 24, 26, 31, 43),
+              invert = FALSE)
+rar2020.srt.pvn %<>% RenameIdents(object = ., `43` = "mneOXY")
+rar2020.srt.pvn %<>% RenameIdents(object = ., `26` = "mneVAS")
+rar2020.srt.pvn %<>% RenameIdents(object = ., `31` = "pneSS")
+rar2020.srt.pvn %<>% RenameIdents(object = ., `24` = "pneCRH")
+rar2020.srt.pvn %<>% RenameIdents(object = ., `15` = "pneTRH")
+rar2020.srt.pvn$ident <- Idents(rar2020.srt.pvn)
+pvn.cols <- colours[c(15, 24, 26, 31, 43)]
+names(pvn.cols) %<>% 
+    plyr::mapvalues(x = ., 
+                    from = c(15, 24, 26, 31, 43), 
+                    to = c("pneTRH", 
+                           "pneCRH", 
+                           "mneVAS", 
+                           "pneSS", 
+                           "mneOXY"))
+DimPlot(rar2020.srt.pvn, label = TRUE, cols = pvn.cols) + NoLegend()
+DimPlot(rar2020.srt.pvn, label = TRUE, cols = pvn.cols, split.by = "samples") + NoLegend()
+
+# rar2020.srt.pvn.list <-
+#     SplitObject(rar2020.srt.pvn, split.by = "age")
+# for (i in 1:length(rar2020.srt.pvn.list)) {
+#   rar2020.srt.pvn.list[[i]] %<>%
+#         SCTransform(seed.use = reseed,
+#                     method = "glmGamPoi",
+#                     verbose = FALSE)
+# }
+# rm(rar2020.srt.pub)
+```
+
+### PVN Neurons
+
+```{r plot-integrated-pvn-neurons, echo=FALSE}
+rar2020.srt.pvn.bck <- rar2020.srt.pvn
+rar2020.srt.pvn %<>% subset(x = ., subset = UMAP_1 > 5)
+p11 <- DimPlot(rar2020.srt.pvn, 
+               reduction = "umap", 
+               group.by = "orig.ident")
+p22 <- DimPlot(rar2020.srt.pvn, 
+               reduction = "umap", 
+               group.by = "ident", 
+               cols = pvn.cols,
+               label = TRUE,
+               repel = TRUE) + NoLegend()
+
+p11 + p22
+```
+
+```{r integrate-pvn-neurons}
+# corrected and scaled
+FeatureScatter(rar2020.srt.pvn.bck, feature1 = "Alk", feature2 = "Sst", slot = "scale.data")
+FeatureScatter(rar2020.srt.pvn, feature1 = "Alk", feature2 = "Sst", slot = "scale.data")
+
+# corrected only
+FeatureScatter(rar2020.srt.pvn.bck, feature1 = "Alk", feature2 = "Sst", slot = "data")
+FeatureScatter(rar2020.srt.pvn, feature1 = "Alk", feature2 = "Sst", slot = "data")
+FeatureScatter(rar2020.srt.pvn, feature1 = "Mc4r", feature2 = "Alk", slot = "data")
+```
+
+```{r plot-integrated-pvn-split, echo=FALSE, fig.width=20}
+plots <- DimPlot(rar2020.srt.pvn, group.by = c("age", "ident"), combine = FALSE)
+plots <- lapply(X = plots, FUN = function(x) x + theme(legend.position = "top") + guides(color = guide_legend(nrow = 3,byrow = TRUE, override.aes = list(size = 3))))
+CombinePlots(plots)
+```
+
+```{r plot-integrated-pvn-clusters, echo=FALSE, fig.width=20}
+DimPlot(rar2020.srt.pvn, label = TRUE, cols = pvn.cols) + NoLegend()
+```
+
+```{r plot-integrated-pvn-mcrs, echo=FALSE}
+DefaultAssay(rar2020.srt.pvn) <- "RNA"
+rar2020.srt.pvn <- 
+    SCTransform(rar2020.srt.pvn, 
+                variable.features.n = 3000,
+                vars.to.regress = c("log_umi_per_gene"),
+                return.only.var.genes = FALSE,
+                seed.use = reseed,
+                verbose = FALSE)
+FeaturePlot(rar2020.srt.pvn, features = mcr_genes, pt.size = 0.7, ncol = 3, order = TRUE)
+
+```
+
+```{r plot-integrated-pvn-irs, echo=FALSE}
+FeaturePlot(rar2020.srt.pvn, features = irs_genes, pt.size = 0.7, ncol = 3, order = TRUE)
+
+```
+
+```{r differential-expression-test-integrated-pvn}
+Idents(rar2020.srt.pvn) <- "ident"
+all_markers_pvn_wtree_final <- FindAllMarkers(rar2020.srt.pvn, 
+                                          assay = "SCT", 
+                                          test.use = "wilcox", 
+                                          logfc.threshold = 0.05, 
+                                          min.pct = 0.05, 
+                                          random.seed = reseed, 
+                                          return.thresh = 0.01)
+
+all_markers_pvn_wtree_final %>% 
+    group_by(cluster) %>% 
+    filter(p_val_adj < 0.01) %>% 
+    slice_max(n = 7, order_by = avg_log2FC) %>% 
+    print(., n = 35)
+    
+
+readr::write_csv(all_markers_pvn_wtree_final, 
+                 path = here::here(tables_dir,
+                                   'all-markers_pvn_wilcox-test-sct.csv'))
+
+all_markers_pvn_wtree_final <- 
+    readr::read_csv(here::here(tables_dir, 
+                               'all-markers_pvn_wilcox-test-sct.csv'))
+```
+
+```{r}
+mcr_genes_plot <-
+    all_markers_pvn_wtree_final %>%
+    dplyr::filter(gene %in% c(mcr_genes, irs_genes, neurotrans), p_val_adj < 0.05) %>%
+    group_by(cluster) %>%
+    top_n(n = 12, wt = pct.1) %>%
+    top_n(n = 7, wt = avg_log2FC) %>%
+    dplyr::ungroup() %>%
+    dplyr::arrange(desc(pct.1)) %>%
+    dplyr::distinct(gene, .keep_all = TRUE) %>%
+    dplyr::arrange(cluster) %>%
+    .$gene %>% c(., mcr_genes[!mcr_genes %in% .])
+
+
+pltDotplot_wtree_top_irs <- DotPlot(assay = 'RNA', object = rar2020.srt.pvn, features = rev(c("Mc1r", "Mc2r", "Mc3r", "Mc4r")), dot.scale = 20) + RotatedAxis()
+cowplot::save_plot(plot = pltDotplot_wtree_top_irs,
+                   base_height = 7,
+                   base_asp = 1.618,
+                   file = here::here(plots_dir, 'dotplot_pvn_mc4r.pdf'))
+
+markers_wtree_final <-
+    all_markers_pvn_wtree_final %>%
+    dplyr::filter(gene %in% c(gene_int)) %>%
+    group_by(cluster) %>%
+    top_n(n = 12, wt = pct.1) %>%
+    top_n(n = 7, wt = avg_log2FC) %>%
+    dplyr::ungroup() %>%
+    dplyr::arrange(desc(pct.1)) %>%
+    dplyr::distinct(gene, .keep_all = TRUE) %>%
+    dplyr::arrange(cluster) %>%
+    .$gene
+
+pltDotplot_wtree_top_irs <- DotPlot(assay = 'RNA', object = rar2020.srt.pvn, features = rev(c(markers_wtree_final)), dot.scale = 20) + RotatedAxis()
+cowplot::save_plot(plot = pltDotplot_wtree_top_irs,
+                   base_height = 7,
+                   base_asp = 1.618,
+                   file = normalizePath(file.path(plots_dir, 'dotplot_pvn_mc4r_update.pdf')))
+
+
+```
+
+#### Upset plots
+
+```{r prepare-data-to-upset}
+srt_mcrs <-
+  GetAssayData(rar2020.srt.pvn, 'data', 'SCT') %>%
+  as.data.frame() %>%
+  .[unique(c(markers_wtree_final)) %>%
+      .[. %in% row.names(rar2020.srt.pvn@assays$SCT@data)], ]
+
+srt_mcrs <- srt_mcrs %>% as.data.frame() %>% t()
+minim <- srt_mcrs %>% as_tibble() %>% dplyr::summarise_each(funs = function(x) quantile(x, .3))
+
+plot_data <-
+    (srt_mcrs > as.double(minim)) %>%
+    as_tibble() %>%
+    mutate_all(as.numeric) %>%
+    dplyr::select(-Avp, -Oxt)
+
+plot_data_filt <-
+    (srt_mcrs > as.double(minim)) %>%
+    as_tibble() %>% filter(Mc4r > 0) %>%
+    mutate_all(as.numeric) %>%
+    dplyr::select(-Avp, -Oxt, -Mc4r)
+
+plot_data2 <-
+    (srt_mcrs > as.double(minim)) %>%
+    as_tibble() %>%
+    mutate_all(as.numeric) %>%
+    mutate('Cell_type' = Idents(rar2020.srt.pvn),
+           'Cell_name' = colnames(rar2020.srt.pvn)) %>%
+    as_tibble()
+
+plot_data3 <-
+    plot_data2 %>%
+    mutate(flat = 1) %>%
+    spread(Cell_type, flat, fill = 0)
+
+## plot gene within cell population
+pltUpSet <- function(gene, pop = 'pneSS') {
+    upset(as.data.frame(plot_data3),
+          order.by = c("degree"),
+          sets.x.label = 'Number of cells',
+          sets = c(gene, pop),
+          keep.order = T,
+          empty.intersections = T,
+          text.scale = c(2, 1.6, 2, 1.3, 2, 3),
+          nsets = 6)
+}
+
+```
+
+```{r plot-upset-mc4r-content}
+upset(as.data.frame(plot_data3),
+      order.by = c("degree"),
+      sets.x.label = 'Number of cells',
+      sets = c('Mc4r', 
+               'pneTRH', 
+               'mneVAS', 
+               'pneCRH', 
+               'pneSS', 
+               'mneOXY'),
+      keep.order = T,
+      text.scale = c(2, 1.6, 2, 1.3, 2, 3),
+      nsets = 6)
+grid::grid.edit('arrange', name = 'arrange2')
+comp_plot <- grid::grid.grab()
+cowplot::save_plot(plot = comp_plot,
+                   base_height = 7,
+                   base_asp = 1.618,
+                   file = normalizePath(file.path(plots_dir, 'pvn_cells_upset_plot_cell_types_Mc4r.pdf')))
+
+
+```
+
+```{r plot-upset-mc3r-content}
+upset(as.data.frame(plot_data3),
+      order.by = c("degree"),
+      sets.x.label = 'Number of cells',
+      sets = c('Mc3r', 
+               'pneTRH', 
+               'mneVAS', 
+               'pneCRH', 
+               'pneSS', 
+               'mneOXY'),
+      keep.order = T,
+      text.scale = c(2, 1.6, 2, 1.3, 2, 3),
+      nsets = 6)
+grid::grid.edit('arrange', name = 'arrange2')
+comp_plot <- grid::grid.grab()
+cowplot::save_plot(plot = comp_plot,
+                   base_height = 7,
+                   base_asp = 1.618,
+                   file = normalizePath(file.path(plots_dir, 'pvn_cells_upset_plot_cell_types_Mc3r.pdf')))
+
+```
+
+```{r plot-upset-mc1r-content}
+upset(as.data.frame(plot_data3),
+      order.by = c("degree"),
+      sets.x.label = 'Number of cells',
+      sets = c('Mc1r', 
+               'pneTRH', 
+               'mneVAS', 
+               'pneCRH', 
+               'pneSS', 
+               'mneOXY'),
+      keep.order = T,
+      text.scale = c(2, 1.6, 2, 1.3, 2, 3),
+      nsets = 6)
+grid::grid.edit('arrange', name = 'arrange2')
+comp_plot <- grid::grid.grab()
+cowplot::save_plot(plot = comp_plot,
+                   base_height = 7,
+                   base_asp = 1.618,
+                   file = normalizePath(file.path(plots_dir, 'pvn_cells_upset_plot_cell_types_Mc1r.pdf')))
+
+```
+
+```{r plot-upset-10}
+upset(as.data.frame(plot_data), order.by = 'freq',
+      sets.x.label = 'Number of cells',
+      text.scale = c(2, 1.6, 2, 1.3, 2, 3),
+      nsets = 10)
+grid::grid.edit('arrange', name = 'arrange2')
+comp_plot <- grid::grid.grab()
+cowplot::save_plot(plot = comp_plot,
+                   base_height = 7,
+                   base_asp = 1.618,
+                   file = normalizePath(file.path(plots_dir, 'alk_cells_upset_plot_top_10_neuropept.pdf')))
+```
+
+```{r plot-upset-5}
+upset(as.data.frame(plot_data), order.by = 'freq',
+      sets.x.label = 'Number of cells',
+      text.scale = c(2, 1.6, 2, 1.3, 2, 3),
+      nsets = 5)
+grid::grid.edit('arrange', name = 'arrange2')
+comp_plot <- grid::grid.grab()
+cowplot::save_plot(plot = comp_plot,
+                   base_height = 7,
+                   base_asp = 1.618,
+                   file = normalizePath(file.path(plots_dir, 'alk_cells_upset_plot_top_5_neuropept.pdf')))
+
+```
+
+```{r plot-upset-3}
+upset(as.data.frame(plot_data), order.by = 'freq',
+      sets.x.label = 'Number of cells',
+      text.scale = c(2, 1.6, 2, 1.3, 2, 3),
+      nsets = 3)
+grid::grid.edit('arrange', name = 'arrange2')
+comp_plot <- grid::grid.grab()
+cowplot::save_plot(plot = comp_plot,
+                   base_height = 7,
+                   base_asp = 1.618,
+                   file = normalizePath(file.path(plots_dir, 'alk_cells_upset_plot_top_3_neuropept.pdf')))
+
+```
+
+```{r}
+FeatureScatter(rar2020.srt.pvn, feature1 = "Mc4r", feature2 = "Slc17a6", slot = "scale.data")
+FeatureScatter(rar2020.srt.pvn, feature1 = "Mc4r", feature2 = "Alk", slot = "scale.data")
+FeatureScatter(rar2020.srt.pvn, feature1 = "Mc4r", feature2 = "Crh", slot = "scale.data")
+FeatureScatter(rar2020.srt.pvn, feature1 = "Mc4r", feature2 = "Trh", slot = "scale.data")
+FeatureScatter(rar2020.srt.pvn, feature1 = "Mc4r", feature2 = "Sst", slot = "scale.data")
+FeatureScatter(rar2020.srt.pvn, feature1 = "Mc4r", feature2 = "Avp", slot = "scale.data")
+FeatureScatter(rar2020.srt.pvn, feature1 = "Mc4r", feature2 = "Oxt", slot = "scale.data")
+
+```
+
+```{r}
+plot_density(rar2020.srt.pvn, "Mc4r")
+plot_density(rar2020.srt.pvn, "Mc3r")
+plot_density(rar2020.srt.pvn, "Mc2r")
+plot_density(rar2020.srt.pvn, "Mc1r")
+
+```
+
+```{r}
+plot_density(rar2020.srt.pub, "Mc4r")
+plot_density(rar2020.srt.pub, "Mc3r")
+plot_density(rar2020.srt.pub, "Mc2r")
+plot_density(rar2020.srt.pub, "Mc1r")
+```
+
+```{r}
+plot_density(rar2020.srt.pub, c("Mc4r", "Alk"))
+```
+
+```{r}
+plot_density(rar2020.srt.pvn, c("Mc4r", "Alk"), combine = T, joint = T)
+```
+
+```{r}
+plot_density(rar2020.srt.pvn, "Sst")
+plot_density(rar2020.srt.pvn, "Avp")
+plot_density(rar2020.srt.pvn, "Oxt")
+plot_density(rar2020.srt.pvn, "Trh")
+```
+
+```{r}
+plot_density(rar2020.srt.pvn, c("Mc4r", "Crh"), combine = T, joint = T)
+```
+
+```{r}
+p_list <- plot_density(rar2020.srt.pvn, c("Mc4r", "Crh"), joint = TRUE, combine = FALSE)
+p_list[[length(p_list)]]
+```
+
+```{r}
+plot_density(rar2020.srt.pvn, c("Trh", "Crh"), combine = T, joint = T)
+```
+
+```{r}
+p_list <- plot_density(rar2020.srt.pvn, c("Onecut3", "Trh"), combine = F, joint = T)
+p_list[[length(p_list)]]
+```
+
+```{r}
+p_list <- plot_density(rar2020.srt.pvn, c("Zic5", "Trh"), combine = F, joint = T)
+p_list[[length(p_list)]]
+```
+
+```{r}
+plot_density(rar2020.srt.pub, c("Onecut3", "Zic5", "Trh"), combine = T, joint = T)
+```
+
+```{r}
+FeaturePlot(object = rar2020.srt.pub, features = c("Onecut3", "Trh"), slot = "scale.data", order = TRUE)
+FeaturePlot(object = rar2020.srt.pvn, features = c("Onecut3", "Trh"), slot = "scale.data", order = TRUE)
+FeaturePlot(object = rar2020.srt.pvn, features = c("Mc4r", "Crh"), slot = "scale.data", order = TRUE)
+```
+
+```{r}
+FeaturePlot(rar2020.srt.pvn, features = c("Mc4r", "Crh"), slot = "scale.data", order = TRUE, blend = TRUE, blend.threshold = 0.1)
+FeaturePlot(rar2020.srt.pvn, features = c("Mc4r", "Alk"), slot = "scale.data", order = TRUE, blend = TRUE, blend.threshold = 0.1)
+```
+
+```{r cache=FALSE}
+sessioninfo::session_info()
+```
