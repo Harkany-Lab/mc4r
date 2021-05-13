@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Evgenii Tretiakov" />
+
+<meta name="date" content="2021-05-14" />
+
+<title>Mc4r in postnatal mouse PVN</title>
+
+<script src="site_libs/header-attrs-2.8/header-attrs.js"></script>
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/master/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Mc4r in PVN Hypothalamus</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Mc4r in postnatal mouse PVN</h1>
+<h4 class="author">Evgenii Tretiakov</h4>
+<h4 class="date">2021-05-14</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2021-05-14
+</p>
+<p>
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
+</p>
+<p>
+<strong>Knit directory:</strong> <code>mc4r/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
+</p>
+<p>
+This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
+  href="https://github.com/jdblischak/workflowr">workflowr</a> (version 1.6.2). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The R Markdown is untracked by Git. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20210511code"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Seed:</strong> <code>set.seed(20210511)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20210511code" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20210511)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Session information:</strong> recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be confident that you successfully produced the results during this run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomEugOTmc4rtree166941caa4b59bd5d5a5ed5c32efd8d2fdcf932atargetblank166941ca"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/EugOT/mc4r/tree/166941caa4b59bd5d5a5ed5c32efd8d2fdcf932a" target="_blank">166941c</a> </a>
+</p>
+</div>
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomEugOTmc4rtree166941caa4b59bd5d5a5ed5c32efd8d2fdcf932atargetblank166941ca" class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version <a href="https://github.com/EugOT/mc4r/tree/166941caa4b59bd5d5a5ed5c32efd8d2fdcf932a" target="_blank">166941c</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .Rhistory
+    Ignored:    .Rproj.user/
+    Ignored:    code/2021-05-12_morning-plots.Rhistory
+    Ignored:    data/2021-05-13_001-086-446-605-669_adult_mm10-hypothalamus-pvn_alk-thinness-paper-subset-srt4-obj-umap.h5seurat
+    Ignored:    data/2021-05-13_001-086-446-605-669_adult_mm10-hypothalamus-pvn_bottom-lh-excl-srt4-obj-sct-umap.h5seurat
+    Ignored:    data/2021-05-13_001-086-446-605-669_adult_mm10-hypothalamus_srt4-obj-umap.h5seurat
+    Ignored:    data/2021-05-13_001-086-446-605-669_mm10-hypothalamus_srt4-obj-umap.h5seurat
+    Ignored:    data/oldCCA_nae_srt.rds
+    Ignored:    output/tables/2021-05-13_001-086-446-605-669_adult_mm10-hypothalamus-pvn_alk-thinness-paper-subset-srt4-obj-umap.rds
+    Ignored:    output/tables/2021-05-13_001-086-446-605-669_adult_mm10-hypothalamus-pvn_bottom-lh-excl-srt4-obj-sct-umap.rds
+    Ignored:    output/tables/2021-05-13_001-086-446-605-669_adult_mm10-hypothalamus_srt4-obj-umap.rds
+    Ignored:    output/tables/2021-05-13_001-086-446-605-669_mm10-hypothalamus_srt4-obj-umap.rds
+    Ignored:    renv/library/
+    Ignored:    renv/local/
+    Ignored:    renv/staging/
+
+Untracked files:
+    Untracked:  analysis/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd
+
+Unstaged changes:
+    Modified:   analysis/01_adult_pvn_neurons_mc4r.Rmd
+    Modified:   code/main.R
+    Modified:   output/figures/alk_cells_upset_plot_top_10_neuropept.pdf
+    Modified:   output/figures/alk_cells_upset_plot_top_3_neuropept.pdf
+    Modified:   output/figures/alk_cells_upset_plot_top_5_neuropept.pdf
+    Modified:   output/figures/dotplot_pvn_mc4r.pdf
+    Modified:   output/figures/dotplot_pvn_mc4r_update.pdf
+    Modified:   output/figures/pvn_cells_upset_plot_cell_types_Mc4r.pdf
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+<p>
+There are no past versions. Publish this analysis with <code>wflow_publish()</code> to start tracking its development.
+</p>
+<hr>
+</div>
+</div>
+</div>
+<div id="published-subset-of-adult-hypothalamic-data-nature-cell-datasets" class="section level2">
+<h2>Published subset of adult hypothalamic data (Nature + Cell datasets)</h2>
+<pre><code>The following `from` values were not present in `x`: 26, 31, 43</code></pre>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/published-adult-sc-hypothalamus-1.png" width="672" style="display: block; margin: auto;" /><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/published-adult-sc-hypothalamus-2.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="step-back-to-see-stratification-by-sequencing-samples" class="section level2">
+<h2>Step back to see stratification by sequencing samples</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/published-adult-sc-hypothalamus-by-samples-1.png" width="8400" style="display: block; margin: auto;" /><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/published-adult-sc-hypothalamus-by-samples-2.png" width="8400" style="display: block; margin: auto;" /></p>
+</div>
+<div id="pvn-neurons" class="section level2">
+<h2>PVN neurons?</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-integrated-pvn-neurons-1.png" width="1344" style="display: block; margin: auto;" /></p>
+</div>
+<div id="what-we-showed-could-be-even-better" class="section level2">
+<h2>What we showed could be even better</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/integrate-pvn-neurons-1.png" width="672" style="display: block; margin: auto;" /><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/integrate-pvn-neurons-2.png" width="672" style="display: block; margin: auto;" /><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/integrate-pvn-neurons-3.png" width="672" style="display: block; margin: auto;" /><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/integrate-pvn-neurons-4.png" width="672" style="display: block; margin: auto;" /><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/integrate-pvn-neurons-5.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="pvn-neurons-1" class="section level2">
+<h2>PVN neurons</h2>
+<pre><code>Warning: CombinePlots is being deprecated. Plots should now be combined using
+the patchwork system.</code></pre>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-integrated-pvn-split-1.png" width="1920" style="display: block; margin: auto;" /></p>
+</div>
+<div id="mc-rs-genes" class="section level2">
+<h2>MC-Rs genes</h2>
+<pre><code>Warning: Could not find Mc1r in the default search locations, found in RNA assay
+instead</code></pre>
+<pre><code>Warning: Could not find Mc2r in the default search locations, found in RNA assay
+instead</code></pre>
+<pre><code>Warning: Could not find Mc3r in the default search locations, found in RNA assay
+instead</code></pre>
+<pre><code>Warning in FeaturePlot(rar2020.srt.pvn, features = mcr_genes, pt.size = 0.7, :
+All cells have the same value (0) of RNA_Mc2r.</code></pre>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-integrated-pvn-mcrs-1.png" width="1728" style="display: block; margin: auto;" /></p>
+</div>
+<div id="differential-gene-expression-dge-test-of-published-groups" class="section level2">
+<h2>Differential Gene Expression (DGE) test of published groups</h2>
+<pre class="r"><code>Idents(rar2020.srt.pvn) &lt;- &quot;ident&quot;
+
+all_markers_pvn_wtree_final %&gt;% 
+    group_by(cluster) %&gt;% 
+    filter(p_val_adj &lt; 0.01) %&gt;% 
+    slice_max(n = 7, order_by = avg_log2FC) %&gt;% 
+    print(., n = 35)</code></pre>
+<pre><code># A tibble: 35 x 7
+# Groups:   cluster [5]
+      p_val avg_log2FC pct.1 pct.2 p_val_adj cluster gene         
+      &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;        
+ 1 2.76e-22       6.25 0.972 0.572  3.65e-18 mneOXY  Oxt          
+ 2 1.28e-28       2.73 0.917 0.181  1.69e-24 mneOXY  Gm28928      
+ 3 1.50e-15       2.17 0.917 0.446  1.98e-11 mneOXY  Fam19a1      
+ 4 3.67e-12       2.03 0.944 0.612  4.86e- 8 mneOXY  Gpc5         
+ 5 2.11e-24       1.88 1     0.27   2.79e-20 mneOXY  Foxp2        
+ 6 1.82e-31       1.87 0.806 0.1    2.41e-27 mneOXY  S100a10      
+ 7 7.47e-18       1.50 1     0.42   9.87e-14 mneOXY  A830018L16Rik
+ 8 7.19e-40       6.63 0.978 0.768  9.50e-36 mneVAS  Avp          
+ 9 7.62e-41       2.48 1     0.732  1.01e-36 mneVAS  Pde4b        
+10 4.03e-33       2.12 1     0.829  5.33e-29 mneVAS  Galntl6      
+11 5.66e-22       1.84 0.888 0.521  7.48e-18 mneVAS  Zfp804a      
+12 1.22e-15       1.68 0.685 0.302  1.61e-11 mneVAS  Gal          
+13 4.35e-21       1.64 0.966 0.591  5.75e-17 mneVAS  Zfp804b      
+14 4.31e-43       1.62 0.91  0.165  5.70e-39 mneVAS  Stxbp6       
+15 1.53e-33       2.39 0.462 0.014  2.02e-29 pneCRH  Crh          
+16 3.90e-25       1.65 0.877 0.369  5.16e-21 pneCRH  Nr3c2        
+17 6.31e-16       1.39 0.846 0.511  8.35e-12 pneCRH  Fmnl2        
+18 1.65e-15       1.34 1     0.759  2.19e-11 pneCRH  Nrxn3        
+19 1.76e-14       1.32 0.908 0.591  2.33e-10 pneCRH  Gpc5         
+20 1.93e-24       1.15 0.554 0.077  2.55e-20 pneCRH  Zbtb16       
+21 1.58e-15       1.05 0.431 0.08   2.09e-11 pneCRH  Ppp1r17      
+22 8.85e-38       5.55 1     0.198  1.17e-33 pneSS   Sst          
+23 1.22e-19       2.38 1     0.557  1.61e-15 pneSS   Trpm3        
+24 2.62e-17       2.07 0.974 0.509  3.46e-13 pneSS   Sorcs1       
+25 1.29e-15       1.99 1     0.673  1.70e-11 pneSS   Ghr          
+26 2.92e-14       1.77 0.842 0.359  3.87e-10 pneSS   Alk          
+27 1.37e-15       1.75 0.868 0.359  1.81e-11 pneSS   Col25a1      
+28 9.32e- 8       1.50 0.684 0.369  1.23e- 3 pneSS   Cntn3        
+29 3.21e-42       2.38 0.968 0.689  4.25e-38 pneTRH  Lingo2       
+30 8.87e-43       1.98 0.947 0.57   1.17e-38 pneTRH  March1       
+31 2.97e-43       1.95 0.64  0.013  3.93e-39 pneTRH  Cbln2        
+32 3.98e-39       1.95 0.884 0.456  5.26e-35 pneTRH  Nav3         
+33 2.07e- 8       1.88 0.561 0.382  2.74e- 4 pneTRH  Il1rapl2     
+34 1.79e-23       1.69 0.757 0.311  2.37e-19 pneTRH  Pcdh11x      
+35 4.58e-29       1.68 0.788 0.219  6.06e-25 pneTRH  Trh          </code></pre>
+</div>
+<div id="percent-of-cells-expressing-mc-rs-in-these-cells-very-low" class="section level2">
+<h2>Percent of cells expressing MC-Rs in these cells (very low?)</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/make-dotplot-mcrs-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre><code>NULL</code></pre>
+</div>
+<div id="marker-genes-for-these-clusters" class="section level2">
+<h2>Marker genes for these clusters</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/make-dotplot-pvn-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="particular-combinations-of-markers-in-mc4r-containing-cells-n-sets-10" class="section level2">
+<h2>Particular combinations of markers in Mc4r containing cells (n sets = 10)</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-upset-10-1.png" width="864" style="display: block; margin: auto;" /></p>
+</div>
+<div id="particular-combinations-of-markers-in-mc4r-containing-cells-n-sets-5" class="section level2">
+<h2>Particular combinations of markers in Mc4r containing cells (n sets = 5)</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-upset-5-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="particular-combinations-of-markers-in-mc4r-containing-cells-n-sets-3" class="section level2">
+<h2>Particular combinations of markers in Mc4r containing cells (n sets = 3)</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-upset-3-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="absolute-correlation-of-mc4r-expression-with-slc17a6" class="section level2">
+<h2>Absolute correlation of Mc4r expression with Slc17a6</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-Slc17a6-correlations-1.png" width="1400" style="display: block; margin: auto;" /></p>
+</div>
+<div id="absolute-correlation-of-mc4r-expression-with-alk" class="section level2">
+<h2>Absolute correlation of Mc4r expression with Alk</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-Alk-correlations-1.png" width="1400" style="display: block; margin: auto;" /></p>
+</div>
+<div id="absolute-correlation-of-mc4r-expression-with-crh" class="section level2">
+<h2>Absolute correlation of Mc4r expression with Crh</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-Crh-correlations-1.png" width="1400" style="display: block; margin: auto;" /></p>
+</div>
+<div id="absolute-correlation-of-mc4r-expression-with-trh" class="section level2">
+<h2>Absolute correlation of Mc4r expression with Trh</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-Trh-correlations-1.png" width="1400" style="display: block; margin: auto;" /></p>
+</div>
+<div id="absolute-correlation-of-mc4r-expression-with-sst" class="section level2">
+<h2>Absolute correlation of Mc4r expression with Sst</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-Sst-correlations-1.png" width="1400" style="display: block; margin: auto;" /></p>
+</div>
+<div id="absolute-correlation-of-mc4r-expression-with-avp" class="section level2">
+<h2>Absolute correlation of Mc4r expression with Avp</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-Avp-correlations-1.png" width="1400" style="display: block; margin: auto;" /></p>
+</div>
+<div id="absolute-correlation-of-mc4r-expression-with-oxt" class="section level2">
+<h2>Absolute correlation of Mc4r expression with Oxt</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-Oxt-correlations-1.png" width="1400" style="display: block; margin: auto;" /></p>
+</div>
+<div id="density-of-mc4r-expressing-cells-in-umap-cells-similarity-space" class="section level2">
+<h2>Density of Mc4r expressing cells in UMAP (cells similarity) space</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-density-mc4r-umap-1.png" width="1400" style="display: block; margin: auto;" /></p>
+</div>
+<div id="density-of-expressing-cells-in-umap-space-for-whole-mc-r-gene-family" class="section level2">
+<h2>Density of expressing cells in UMAP space for whole MC-R gene family</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-density-mcrs-on-original-umap-1.png" width="6300" style="display: block; margin: auto;" /></p>
+</div>
+<div id="step-back-to-estimate-density-of-mc4r-and-alk-expression-across-whole-adult-dataset" class="section level2">
+<h2>Step back to estimate density of Mc4r and Alk expression across whole adult dataset</h2>
+<pre><code>Warning: CombinePlots is being deprecated. Plots should now be combined using
+the patchwork system.</code></pre>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-density-c-mc4r-alk-on-original-umap-1.png" width="6300" style="display: block; margin: auto;" /></p>
+</div>
+<div id="examine-shared-attributes-density-in-pvn-example" class="section level2">
+<h2>Examine shared attributes density in PVN (example)</h2>
+<pre><code>Warning: CombinePlots is being deprecated. Plots should now be combined using
+the patchwork system.</code></pre>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-density-cj-mc4r-alk-umap-1.png" width="6300" style="display: block; margin: auto;" /></p>
+</div>
+<div id="density-of-main-pvn-markers-expressing-cells--" class="section level2">
+<h2>Density of main PVN markers expressing cells -</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-density-Sst-alk-umap-1.png" width="1400" style="display: block; margin: auto;" /></p>
+</div>
+<div id="density-of-main-pvn-markers-expressing-cells---1" class="section level2">
+<h2>Density of main PVN markers expressing cells -</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-density-Avp-alk-umap-1.png" width="1400" style="display: block; margin: auto;" /></p>
+</div>
+<div id="density-of-main-pvn-markers-expressing-cells---2" class="section level2">
+<h2>Density of main PVN markers expressing cells -</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-density-Oxt-alk-umap-1.png" width="1400" style="display: block; margin: auto;" /></p>
+</div>
+<div id="density-of-main-pvn-markers-expressing-cells---3" class="section level2">
+<h2>Density of main PVN markers expressing cells -</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-density-Trh-alk-umap-1.png" width="1400" style="display: block; margin: auto;" /></p>
+</div>
+<div id="checking-expectation-for-high-density-of-shared-crh-and-mc4r-we-again-see-contradiction" class="section level2">
+<h2>Checking expectation for high density of shared Crh and Mc4r we again see contradiction</h2>
+<pre><code>Warning: CombinePlots is being deprecated. Plots should now be combined using
+the patchwork system.</code></pre>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-density-cj-mc4r-crh-umap-1.png" width="6300" style="display: block; margin: auto;" /></p>
+</div>
+<div id="its-on-the-edge" class="section level2">
+<h2>It’s on the edge</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-density-j-mc4r-crh-umap-1.png" width="2800" style="display: block; margin: auto;" /></p>
+</div>
+<div id="wierd-trh-part-of-crh-cluster" class="section level2">
+<h2>Wierd Trh part of Crh cluster</h2>
+<pre><code>Warning: CombinePlots is being deprecated. Plots should now be combined using
+the patchwork system.</code></pre>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-density-cj-trh-crh-umap-1.png" width="6300" style="display: block; margin: auto;" /></p>
+</div>
+<div id="small-lyrical-digression-about-trh-patterns-onecut3trh-density-14" class="section level2">
+<h2>Small lyrical digression about Trh patterns: Onecut3+Trh density (1/4)</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-density-j-onecut3-trh-umap-1.png" width="2800" style="display: block; margin: auto;" /></p>
+</div>
+<div id="small-lyrical-digression-about-trh-patterns-zic5trh-density-24" class="section level2">
+<h2>Small lyrical digression about Trh patterns: Zic5+Trh density (2/4)</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-density-j-zic5-trh-umap-1.png" width="2800" style="display: block; margin: auto;" /></p>
+</div>
+<div id="small-lyrical-digression-about-trh-patterns-onecut3--zic5---trh-density-34" class="section level2">
+<h2>Small lyrical digression about Trh patterns: Onecut3-&gt; Zic5 -&gt; Trh density (3/4)</h2>
+<pre><code>Warning: CombinePlots is being deprecated. Plots should now be combined using
+the patchwork system.</code></pre>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-density-cj-onecut3-zic5-trh-on-original-umap-1.png" width="8400" style="display: block; margin: auto;" /></p>
+</div>
+<div id="small-lyrical-digression-about-trh-patterns-onecut3--zic5---trh-density-44" class="section level2">
+<h2>Small lyrical digression about Trh patterns: Onecut3-&gt; Zic5 -&gt; Trh density (4/4)</h2>
+<p>Excluded from original publication</p>
+<p><img src="/home/etretiakov/PycharmProjects/deciphering-role-of-onecut3-transcription-factor-in-cell-fate-decisions/outputs/figures/onecut3-zic5-trh.png" width="212" style="display: block; margin: auto;" /></p>
+</div>
+<div id="back-to-mc4r-blend-plots-of-mc4r-and-trh-expression" class="section level2">
+<h2>Back to Mc4r: blend plots of Mc4r and Trh expression</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-blend-mcr4-trh-umap-1.png" width="8400" style="display: block; margin: auto;" /></p>
+</div>
+<div id="back-to-mc4r-blend-plots-of-mc4r-and-crh-expression" class="section level2">
+<h2>Back to Mc4r: blend plots of Mc4r and Crh expression</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-blend-mcr4-crh-umap-1.png" width="8400" style="display: block; margin: auto;" /></p>
+</div>
+<div id="back-to-mc4r-blend-plots-of-trh-and-crh-expression" class="section level2">
+<h2>Back to Mc4r: blend plots of Trh and Crh expression</h2>
+<p><img src="figure/2021-05-14_pr_adult_pvn_neurons_mc4r.Rmd/plot-blend-trh-crh-umap-1.png" width="8400" style="display: block; margin: auto;" /></p>
+</div>
+<div id="back-to-mc4r-particular-combinations-of-markers-in-pvn" class="section level2">
+<h2>Back to Mc4r: Particular combinations of markers in PVN</h2>
+<pre><code>NULL</code></pre>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span> Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre><code>R version 4.0.5 (2021-03-31)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 20.10
+
+Matrix products: default
+BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3
+LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.10.so
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=de_AT.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=de_AT.UTF-8    LC_MESSAGES=en_US.UTF-8   
+ [7] LC_PAPER=de_AT.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=de_AT.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+ [1] Nebulosa_1.0.2        patchwork_1.1.1       UpSetR_1.4.0         
+ [4] SeuratDisk_0.0.0.9019 SeuratWrappers_0.3.0  SeuratObject_4.0.1   
+ [7] Seurat_4.0.1          future_1.21.0         magrittr_2.0.1       
+[10] forcats_0.5.1         stringr_1.4.0         dplyr_1.0.6          
+[13] purrr_0.3.4           readr_1.4.0           tidyr_1.1.3          
+[16] tibble_3.1.1          ggplot2_3.3.3         tidyverse_1.3.1      
+[19] here_1.0.1           
+
+loaded via a namespace (and not attached):
+  [1] readxl_1.3.1                backports_1.2.1            
+  [3] workflowr_1.6.2             plyr_1.8.6                 
+  [5] igraph_1.2.6                lazyeval_0.2.2             
+  [7] splines_4.0.5               listenv_0.8.0              
+  [9] scattermore_0.7             GenomeInfoDb_1.26.7        
+ [11] digest_0.6.27               htmltools_0.5.1.1          
+ [13] fansi_0.4.2                 tensor_1.5                 
+ [15] cluster_2.1.2               ks_1.12.0                  
+ [17] ROCR_1.0-11                 remotes_2.3.0              
+ [19] globals_0.14.0              modelr_0.1.8               
+ [21] matrixStats_0.58.0          spatstat.sparse_2.0-0      
+ [23] colorspace_2.0-1            rvest_1.0.0                
+ [25] ggrepel_0.9.1               haven_2.4.1                
+ [27] xfun_0.22                   RCurl_1.98-1.3             
+ [29] crayon_1.4.1                jsonlite_1.7.2             
+ [31] spatstat.data_2.1-0         survival_3.2-11            
+ [33] zoo_1.8-9                   glue_1.4.2                 
+ [35] polyclip_1.10-0             gtable_0.3.0               
+ [37] zlibbioc_1.36.0             XVector_0.30.0             
+ [39] leiden_0.3.7                DelayedArray_0.16.3        
+ [41] future.apply_1.7.0          SingleCellExperiment_1.12.0
+ [43] BiocGenerics_0.36.1         abind_1.4-5                
+ [45] scales_1.1.1                mvtnorm_1.1-1              
+ [47] DBI_1.1.1                   miniUI_0.1.1.1             
+ [49] Rcpp_1.0.6                  viridisLite_0.4.0          
+ [51] xtable_1.8-4                reticulate_1.20            
+ [53] spatstat.core_2.1-2         bit_4.0.4                  
+ [55] rsvd_1.0.5                  mclust_5.4.7               
+ [57] stats4_4.0.5                htmlwidgets_1.5.3          
+ [59] httr_1.4.2                  RColorBrewer_1.1-2         
+ [61] ellipsis_0.3.2              ica_1.0-2                  
+ [63] farver_2.1.0                pkgconfig_2.0.3            
+ [65] sass_0.4.0                  uwot_0.1.10                
+ [67] dbplyr_2.1.1                deldir_0.2-10              
+ [69] utf8_1.2.1                  labeling_0.4.2             
+ [71] tidyselect_1.1.1            rlang_0.4.11               
+ [73] reshape2_1.4.4              later_1.2.0                
+ [75] munsell_0.5.0               cellranger_1.1.0           
+ [77] tools_4.0.5                 cli_2.5.0                  
+ [79] generics_0.1.0              broom_0.7.6                
+ [81] ggridges_0.5.3              evaluate_0.14              
+ [83] fastmap_1.1.0               yaml_2.2.1                 
+ [85] goftest_1.2-2               bit64_4.0.5                
+ [87] knitr_1.33                  fs_1.5.0                   
+ [89] fitdistrplus_1.1-3          RANN_2.6.1                 
+ [91] pbapply_1.4-3               nlme_3.1-152               
+ [93] mime_0.10                   xml2_1.3.2                 
+ [95] hdf5r_1.3.3                 compiler_4.0.5             
+ [97] rstudioapi_0.13             plotly_4.9.3               
+ [99] png_0.1-7                   spatstat.utils_2.1-0       
+[101] reprex_2.0.0                bslib_0.2.4                
+[103] stringi_1.6.1               highr_0.9                  
+[105] lattice_0.20-44             Matrix_1.3-3               
+[107] vctrs_0.3.8                 pillar_1.6.0               
+[109] lifecycle_1.0.0             BiocManager_1.30.15        
+[111] spatstat.geom_2.1-0         lmtest_0.9-38              
+[113] jquerylib_0.1.4             RcppAnnoy_0.0.18           
+[115] bitops_1.0-7                data.table_1.14.0          
+[117] cowplot_1.1.1               irlba_2.3.3                
+[119] GenomicRanges_1.42.0        httpuv_1.6.1               
+[121] R6_2.5.0                    promises_1.2.0.1           
+[123] KernSmooth_2.23-20          gridExtra_2.3              
+[125] IRanges_2.24.1              parallelly_1.25.0          
+[127] codetools_0.2-17            MASS_7.3-54                
+[129] assertthat_0.2.1            SummarizedExperiment_1.20.0
+[131] rprojroot_2.0.2             withr_2.4.2                
+[133] sctransform_0.3.2           GenomeInfoDbData_1.2.4     
+[135] S4Vectors_0.28.1            mgcv_1.8-35                
+[137] parallel_4.0.5              hms_1.0.0                  
+[139] grid_4.0.5                  rpart_4.1-15               
+[141] rmarkdown_2.8               MatrixGenerics_1.2.1       
+[143] Rtsne_0.15                  git2r_0.28.0               
+[145] Biobase_2.50.0              shiny_1.6.0                
+[147] lubridate_1.7.10           </code></pre>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+http://docs.mathjax.org/en/latest/configuration.html.  This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

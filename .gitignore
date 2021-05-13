@@ -2,6 +2,7 @@
 *.Rhistory
 .RData
 *.rds
+*.h5seurat
 .Ruserdata
 .Rapp.history
 .DS_Store
