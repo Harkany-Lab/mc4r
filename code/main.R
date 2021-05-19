@@ -92,6 +92,9 @@ readTable <- function(name, file) {
     assign(envir = .GlobalEnv, x = name, value = readr::read_csv(here::here(tables_dir, file)))
 }
 
+age_pal <- list(c(0.54, 0.08879999999999995, 0.05999999999999994), c(0.5111999999999999, 0.54, 0.05999999999999994), c(0.05999999999999994, 0.54, 0.08879999999999996), c(0.05999999999999994, 0.5111999999999999, 0.54), c(0.08879999999999996, 0.05999999999999994, 0.54), c(0.54, 0.05999999999999994, 0.5111999999999999)) %>% map(~ rgb(.x[1], .x[2], .x[3], maxColorValue = 1)) %>% flatten_chr()
+names(age_pal) <- c('E15', 'E17', 'P0', 'P2', 'P10', 'P23')
+
 # try({
 #     rar2020.srt.pub <-
 #         readr::read_rds(here::here(tables_dir,

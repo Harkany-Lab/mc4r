@@ -2,13 +2,23 @@
 title: "Mc4r in postnatal mouse PVN"
 author: "Evgenii Tretiakov"
 date: "2021-05-18"
-output:
-  ioslides_presentation:
-    widescreen: true
+output: beamer_presentation
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(
+    autodep        = TRUE,
+    cache          = FALSE,
+    cache.lazy     = FALSE,
+    dev            = c("png", "pdf"),
+    echo           = FALSE,
+    error          = FALSE,
+    fig.align      = "center",
+    fig.width      = 14,
+    fig.height     = 12,
+    message        = FALSE,
+    warning        = FALSE
+)
 
 # Load tidyverse infrastructure packages
 suppressPackageStartupMessages({
@@ -16,6 +26,7 @@ suppressPackageStartupMessages({
     library(tidyverse)
     library(magrittr)
     library(future)
+    library(kableExtra)
 })
 
 if (!requireNamespace("Nebulosa", quietly = TRUE)) BiocManager::install("Nebulosa")
@@ -24,6 +35,8 @@ suppressPackageStartupMessages({
     library(Seurat)
     library(SeuratWrappers)
     library(SeuratDisk)
+    library(pagoda2)
+    library(conos)
     library(UpSetR)
     library(patchwork)
     library(Nebulosa)
@@ -51,6 +64,8 @@ options(future.globals.maxSize = Inf,
         future.rng.onMisuse = "ignore")
 plan()
 
+# ggplot2 theme
+theme_set(theme_bw())
 ```
 
 ```{r load-data, include=FALSE}
@@ -105,138 +120,349 @@ stopifnot(all(check.data))
 
 ```
 
-## Published subset of adult hypothalamic data (Nature + Cell datasets)
+## Published subset of adult hypothalamic data (Nature + Cell datasets) in UMAP (cells similarity) space
 
-```{r published-adult-sc-hypothalamus, fig.width=7, fig.height=6, echo=FALSE}
+```{r published-adult-sc-hypothalamus, fig.width=14, fig.height=12, echo=FALSE, warning=FALSE}
 Idents(rar2020.srt.pub) <- "wtree"
 colours <- readr::read_lines(here(data_dir, "colours_wtree.tsv"))
-clrlev <- levels(rar2020.srt.pub)
+clrlev <- 1:45
 names(colours) <- clrlev
 pvn.cols <- colours[c(15, 24, 26, 31, 43)]
-names(pvn.cols) %<>%
-    plyr::mapvalues(x = .,
-                    from = c(15, 24, 26, 31, 43),
-                    to = c("pneTRH",
-                           "pneCRH",
-                           "mneVAS",
-                           "pneSS",
-                           "mneOXY"))
 
-# Clusters of adults
-DimPlot(rar2020.srt.pub, label = TRUE, cols = colours) + NoLegend() + DarkTheme()
-# clusters of PVN
-DimPlot(rar2020.srt.pvn.bck, label = TRUE, cols = pvn.cols) + NoLegend() + DarkTheme()
+Idents(rar2020.srt.pub.all) <- "wtree"
+rar2020.srt.pub.pne <- 
+    rar2020.srt.pub.all %>% 
+    subset(idents = c(24))
+
+
+DimPlot(rar2020.srt.pub, label = TRUE, cols = colours, repel = TRUE) + DarkTheme()
 
 ```
 
-## Step back to see stratification by sequencing samples
+## Density of expression for MC-R gene family in UMAP space
 
-```{r published-adult-sc-hypothalamus-by-samples, echo=FALSE, fig.height=12, fig.width=28, dpi=300}
-# Clusters of adults
-DimPlot(rar2020.srt.pub, label = TRUE, cols = colours, split.by = "samples", ncol = 4) + NoLegend() + DarkTheme()
-# clusters of PVN
-DimPlot(subset(rar2020.srt.pub, idents = c(15, 24, 26, 31, 43)), label = TRUE, cols = colours, split.by = "samples", ncol = 4) + NoLegend() + DarkTheme()
-
+```{r plot-density-mcrs-on-original-umap, fig.width=28, fig.height=24, dpi=300, echo=FALSE, warning=FALSE}
+p.d <- plot_density(rar2020.srt.pub, "Mc4r") + DarkTheme()
+p.c <- plot_density(rar2020.srt.pub, "Mc3r") + DarkTheme()
+p.b <- plot_density(rar2020.srt.pub, "Mc2r") + DarkTheme()
+p.a <- plot_density(rar2020.srt.pub, "Mc1r") + DarkTheme()
+(p.a + p.b)/(p.c + p.d)
 ```
 
-## PVN neurons?
+## Zoom into area of highest density of Mc4r expressing cells in UMAP space (PNe of PVN)
 
-```{r plot-integrated-pvn-neurons, fig.width=14, fig.height=6, echo=FALSE}
-p11 <- DimPlot(rar2020.srt.pvn, 
-               reduction = "umap", 
-               group.by = "orig.ident") + DarkTheme()
-p22 <- DimPlot(rar2020.srt.pvn, 
-               reduction = "umap", 
-               group.by = "ident", 
-               cols = pvn.cols,
-               label = TRUE,
-               repel = TRUE) + NoLegend() + DarkTheme()
+```{r plot-density-mc4r-umap, fig.width=30, fig.height=24, echo=FALSE, dpi=200, warning=FALSE}
+pwlayout <- "
+AABB
+AABB
+DDCC
+DDCC
+"
+p1 <- plot_density(rar2020.srt.pvn, "Mc4r") + DarkTheme()
 
-p11 + p22
+p2Trh <- FeaturePlot(
+    rar2020.srt.pvn,
+    features = c("Mc4r", "Trh"),
+    slot = "scale.data",
+    order = TRUE,
+    blend = TRUE,
+    blend.threshold = 0.1,
+    combine = FALSE
+)
+
+p2 <- p2Trh[[3]] + 
+    NoLegend() + 
+    DarkTheme()
+
+p2Crh <- FeaturePlot(
+    rar2020.srt.pvn,
+    features = c("Mc4r", "Crh"),
+    slot = "scale.data",
+    order = TRUE,
+    blend = TRUE,
+    blend.threshold = 0.1,
+    combine = FALSE
+)
+
+p3 <- p2Crh[[3]] + 
+    NoLegend() + 
+    DarkTheme()
+
+p4 <- p2Trh[[1]] + NoLegend() + DarkTheme()
+
+p6 <- p2Trh[[4]] + NoLegend() + DarkTheme()
+p7 <- p2Crh[[4]] + NoLegend() + DarkTheme()
+
+
+p1 + p4 + p2 + p3 + p6 + p7 + plot_layout(design = pwlayout)
 ```
 
-## What we showed could be even better
+## Age dynamic
 
-```{r integrate-pvn-neurons, fig.width=7, fig.height=6, echo=FALSE}
-# corrected and scaled
-FeatureScatter(rar2020.srt.pvn.bck, feature1 = "Alk", feature2 = "Sst", slot = "scale.data") + DarkTheme()
-FeatureScatter(rar2020.srt.pvn, feature1 = "Alk", feature2 = "Sst", slot = "scale.data") + DarkTheme()
+```{r plot-mc4r-corr-scaterplot-by-age, fig.width=16, fig.height=14, echo=FALSE, dpi=350, warning=FALSE}
+rar2020.srt.pub.pne <-
+    SCTransform(rar2020.srt.pub.pne,
+                variable.features.n = 3000,
+                vars.to.regress = c("log_umi_per_gene"),
+                return.only.var.genes = FALSE,
+                seed.use = reseed,
+                verbose = FALSE)
+srt_mcrs_filtered_ages <-
+    GetAssayData(rar2020.srt.pub.pne, 'data', 'SCT') %>%
+    as.data.frame() %>%
+    t()
+filt_age_pvn_sum <- 
+    colSums(srt_mcrs_filtered_ages) %>% 
+    .[. > 5] %>% 
+    names()
+srt_mcrs_filtered_ages %<>% .[, filt_age_pvn_sum]
 
-# corrected only
-FeatureScatter(rar2020.srt.pvn.bck, feature1 = "Alk", feature2 = "Sst", slot = "data") + DarkTheme()
-FeatureScatter(rar2020.srt.pvn, feature1 = "Alk", feature2 = "Sst", slot = "data") + DarkTheme()
-FeatureScatter(rar2020.srt.pvn, feature1 = "Mc4r", feature2 = "Alk", slot = "data") + DarkTheme()
+minim_pvn_age_filt <- 
+    srt_mcrs_filtered_ages %>% 
+    as_tibble() %>% 
+    select(all_of(filt_age_pvn_sum)) %>% 
+    summarise(across(.fns = function(x) quantile(x, .1)))
+
+minim_pvn_age_filt2 <-
+    (srt_mcrs_filtered_ages > as.double(minim_pvn_age_filt)) %>%
+    as_tibble() %>%
+    mutate_all(as.numeric) %>% 
+    summarise(across(.fns = function(x) sum(x)/length(x))) %>% 
+    as_vector() %>% 
+    .[.['Mc4r'] <= .]
+
+srt_mcrs_filtered_ages %<>% .[, names(minim_pvn_age_filt2)]
+pvn_age_corr_genes  <- corrr::correlate(srt_mcrs_filtered_ages)
+
+mcrs_age_corr_genes <- 
+    pvn_age_corr_genes %>% 
+    arrange(-Mc4r) %>% 
+    select(term, Mc4r, Trh)
+
+threshold.min.pct.Trh  <- .05
+threshold.min.pct.Mc4r <- .1
+threshold.max.pct.Trh  <- .05
+threshold.max.pct.Mc4r <- .1
+mcrs_age_corr_genes_intersect_1 <- 
+    intersect(x = mcrs_age_corr_genes %>% 
+                slice_max(order_by = Trh, 
+                          prop = threshold.min.pct.Trh), 
+              y = mcrs_age_corr_genes %>% 
+                slice_max(order_by = Mc4r, 
+                          prop = threshold.min.pct.Mc4r)
+)
+mcrs_age_corr_genes_intersect_2 <- 
+    intersect(x = mcrs_age_corr_genes %>% 
+                slice_min(order_by = Trh, 
+                          prop = threshold.max.pct.Trh), 
+              y = mcrs_age_corr_genes %>% 
+                slice_min(order_by = Mc4r, 
+                          prop = threshold.max.pct.Mc4r)
+)
+highlight_mcrs_age_corr_genes <- 
+    union(mcrs_age_corr_genes_intersect_1$term,
+          mcrs_age_corr_genes_intersect_2$term)
+
+# require("biomartr")
+# mouse = useMart("ensembl", dataset = "mmusculus_gene_ensembl")
+# union(c("Slc2a3", "Slc17a6", "Gad1", "Slc32a1", 
+#         "Irs1", "Ltk", "Lepr", "Alk", "Lmo4", 
+#         "Mdk", "Ptn", "Sim1", 
+#         "Fam150a", "Fam150b", "Slc1a2"), 
+#       union(good_npeprec_final_full, 
+#             good_neuropept_final_full)) %>%
+#   biomart(
+#     genes = .,
+#     mart = "ENSEMBL_MART_ENSEMBL",
+#     dataset = "mmusculus_gene_ensembl",
+#     attributes = c("ensembl_gene_id", "description"),
+#     filters = "mgi_symbol"
+#   ) %>% as_tibble() -> full_names_tab
+# readr::write_csv(full_names_tab, path = file.path(tables_dir, 'full_names_tab.csv'))
+
+
+param.plot.1.repel.box.padding       <- 0.5
+param.plot.1.repel.max.overap        <- 10
+param.plot.1.filter.padj             <- 0.01
+param.plot.1.filter.baseMean         <- 1
+param.plot.1.point.colour.background <- "grey50"
+
+plot_corr_mcrs_age_corr_genes <- 
+  mcrs_age_corr_genes %>%
+  mutate(term = if_else(condition = term %in% highlight_mcrs_age_corr_genes, term, "")) %>% 
+  ggplot(., aes(Mc4r, Trh, label = term)) +
+  geom_point(data = mcrs_age_corr_genes[!mcrs_age_corr_genes$term %in% highlight_mcrs_age_corr_genes,], 
+             color = param.plot.1.point.colour.background) +
+  ggrepel::geom_text_repel(box.padding = param.plot.1.repel.box.padding, 
+                           max.overlaps = param.plot.1.repel.max.overap) +
+  geom_point(data = mcrs_age_corr_genes[mcrs_age_corr_genes$term %in% mcrs_age_corr_genes_intersect_1$term,], 
+             color = "red") +
+  geom_point(data = mcrs_age_corr_genes[mcrs_age_corr_genes$term %in% mcrs_age_corr_genes_intersect_2$term,], 
+             color = "blue") +
+  labs(title = "pnePVN cells correlation with Mc4r and Trh",
+       caption = sprintf("Selected genes (red) within intersection of top %s correlation with Trh and top %s correlation with Trh\n(blue) within intersection of bottom %s correlation with Trh and bottom %s correlation with Trh;\ngenes with same or higher percent of expressing cells as Mc4r",
+                         threshold.min.pct.Trh,
+                         threshold.min.pct.Mc4r,
+                         threshold.max.pct.Trh,
+                         threshold.max.pct.Mc4r))
+
+plot_corr_mcrs_age_corr_genes
 ```
 
-## PVN neurons
-
-```{r plot-integrated-pvn-split, echo=FALSE, fig.width=20}
-plots <- DimPlot(rar2020.srt.pvn, group.by = c("age", "ident"), combine = FALSE)
-plots <- lapply(X = plots, FUN = function(x) x + DarkTheme() + theme(legend.position = "top") + guides(color = guide_legend(nrow = 3,byrow = TRUE, override.aes = list(size = 3))))
-CombinePlots(plots)
+```{r kable-mc4r-corr-by-age}
+mcrs_age_corr_genes[mcrs_age_corr_genes$term %in% highlight_mcrs_age_corr_genes,] %>% 
+  arrange(-Mc4r) %>%
+  kbl(caption = sprintf("Selected genes are within intersection of top %s correlation with Trh and top %s correlation with Trh\nand within intersection of bottom %s correlation with Trh and bottom %s correlation with Trh;\ngenes with same or higher percent of expressing cells as Mc4r",
+                        threshold.min.pct.Trh,
+                        threshold.min.pct.Mc4r,
+                        threshold.max.pct.Trh,
+                        threshold.max.pct.Mc4r),
+      digits = 2) %>% 
+  kable_paper() %>%
+  scroll_box(width = "100%", height = "200px")
 ```
 
-## MC-Rs genes
 
-```{r  plot-integrated-pvn-mcrs, echo=FALSE, fig.width=18, fig.height=6}
-FeaturePlot(rar2020.srt.pvn, features = mcr_genes, pt.size = 0.7, ncol = 4, order = TRUE) + DarkTheme()
+```{r plot-mc4r-heatmap-by-age, fig.width=12, fig.asp=2, echo=FALSE, dpi=300, warning=FALSE}
+plot_heatmap_mcrs_age_corr_genes <- 
+  DoHeatmap(
+    rar2020.srt.pub.pne,
+    features = c('Mc4r', highlight_mcrs_age_corr_genes),
+    size = 3,
+    assay = 'SCT',
+    slot = 'scale.data',
+    group.by = "age"
+  )
+
+plot_heatmap_mcrs_age_corr_genes
 ```
 
-## Differential Gene Expression (DGE) test of published groups
+```{r plot-mc4r-dotplot-by-age, fig.width=32, fig.asp=0.4, echo=FALSE, dpi=200, warning=FALSE}
+plot_dot_mcrs_age_corr_genes <- 
+  DotPlot(
+    rar2020.srt.pub.pne,
+    assay = "SCT",
+    features = c('Mc4r', highlight_mcrs_age_corr_genes),
+    group.by = "age"
+  ) + RotatedAxis()
 
-```{r differential-expression-test-integrated-pvn, echo=TRUE}
-Idents(rar2020.srt.pvn) <- "ident"
-
-all_markers_pvn_wtree_final %>% 
-    group_by(cluster) %>% 
-    filter(p_val_adj < 0.01) %>% 
-    slice_max(n = 7, order_by = avg_log2FC) %>% 
-    print(., n = 35)
-
+plot_dot_mcrs_age_corr_genes
 ```
 
-## Percent of cells expressing MC-Rs in these cells (very low?)
 
-```{r make-dotplot-mcrs, fig.height=3, fig.asp=.618, echo=FALSE}
-DotPlot(assay = 'RNA', object = rar2020.srt.pvn, features = rev(c("Mc1r", "Mc2r", "Mc3r", "Mc4r")), dot.scale = 20) + RotatedAxis() + DarkTheme()
+## Gene Combinations
 
-```
+```{r plot-heatmap-adult, fig.width=7, fig.height=6, echo=FALSE}
+rar2020.srt.pub.pne %<>% subset(subset = age %in% c("P10", "P23"))
 
-```{r make-upset-mc4r, fig.height=3, fig.asp=.618, echo=FALSE}
-pltUpSet(gene = 'Mc4r',
-         pop = rev(c('pneTRH', "mneVAS", 
-                     'pneCRH', "mneOXY", 'pneSS')),
-         pdata = plot_data3) + DarkTheme()
-```
-
-## Marker genes for these clusters
-
-```{r make-dotplot-pvn, fig.height=7, fig.asp=.618, echo=FALSE}
-markers_wtree_final <-
-    all_markers_pvn_wtree_final %>%
-    dplyr::filter(gene %in% c(gene_int)) %>%
-    group_by(cluster) %>%
-    top_n(n = 12, wt = pct.1) %>%
-    top_n(n = 7, wt = avg_log2FC) %>%
-    dplyr::ungroup() %>%
-    dplyr::arrange(desc(pct.1)) %>%
-    dplyr::distinct(gene, .keep_all = TRUE) %>%
-    dplyr::arrange(cluster) %>%
+markers_wtree_final_trh <- union(
+  all_markers_pvn_wtree_final %>%
+    dplyr::filter(cluster %in% c('pneTRH'), 
+                  p_val <= 1e-8) %>% 
+    mutate(pct.dif = pct.1 - pct.2) %>% 
+    arrange(-pct.dif) %>% 
+    filter(pct.dif > .1, 
+           pct.2 >= .5, 
+           avg_log2FC >= .5, 
+           gene %in% big_genes) %>% 
+    arrange(-avg_log2FC) %>% 
+    .$gene,
+  all_markers_pvn_wtree_final %>%
+    dplyr::filter(cluster %in% c('pneTRH'), 
+                  p_val_adj <= 1e-5) %>% 
+    mutate(pct.dif = pct.1 - pct.2) %>% 
+    arrange(-pct.dif) %>% 
+    filter(pct.dif > .1, 
+           pct.2 >= .5, 
+           avg_log2FC >= 1.5) %>% 
+    arrange(-avg_log2FC) %>% 
     .$gene
+)
 
-DotPlot(assay = 'RNA', object = rar2020.srt.pvn, features = rev(c(markers_wtree_final)), dot.scale = 20) + RotatedAxis()
+markers_wtree_final_pvn <- union(
+  all_markers_pvn_wtree_final %>%
+    dplyr::filter(cluster %in% c('pneCRH'), 
+                  p_val <= 1e-4) %>% 
+    mutate(pct.dif = pct.1 - pct.2) %>% 
+    arrange(-pct.dif) %>% 
+    filter(pct.dif > .1, 
+           pct.1 >= .1, 
+           avg_log2FC >= .15, 
+           gene %in% big_genes) %>% 
+    arrange(-avg_log2FC) %>% 
+    .$gene,
+  all_markers_pvn_wtree_final %>%
+    dplyr::filter(cluster %in% c('pneCRH'), 
+                  p_val_adj <= 1e-3) %>% 
+    mutate(pct.dif = pct.1 - pct.2) %>% 
+    arrange(-pct.dif) %>% 
+    filter(pct.dif > .1, 
+           pct.1 >= .1, 
+           avg_log2FC >= 1) %>% 
+    arrange(-avg_log2FC) %>% 
+    .$gene
+)
+
+mcrs_age_corr_genes_intersect_3 <- 
+  unique(
+    c(
+      markers_wtree_final_trh,
+      intersect(x = mcrs_age_corr_genes %>% 
+                  slice_max(order_by = Trh, 
+                            n = 25), 
+                y = mcrs_age_corr_genes %>% 
+                  slice_max(order_by = Mc4r, 
+                            n = 25))$term, 
+      mcrs_age_corr_genes %>% 
+        slice_max(order_by = Trh, n = 3) %>% 
+        filter(Mc4r >= 0.1) %>% 
+        .$term,
+      mcrs_age_corr_genes %>% 
+        slice_max(order_by = Mc4r, prop = 0.01) %>% 
+        filter(Trh >= 0.3) %>% 
+        .$term,
+      markers_wtree_final_pvn,
+      'Mc4r',
+      'Ptn',
+      'Alk',
+      pvn_genes,
+      dmh_trh_g
+      )
+    )
+
+srt_mcrs_filtered <-
+    GetAssayData(rar2020.srt.pub.pne, 'data', 'SCT') %>%
+    as.data.frame() %>%
+    .[unique(c(mcrs_age_corr_genes_intersect_3)) %>%
+          .[. %in% row.names(rar2020.srt.pub.pne@assays$SCT@data)], ] %>%
+    as.data.frame() %>%
+    t()
+
+custom_genes <- c(corrr::correlate(srt_mcrs_filtered) %>% arrange(Mc4r) %>% select(term, Mc4r) %>% .$term)
+
+custom_order <- 
+  srt_mcrs_filtered %>%
+  as.data.frame() %>% 
+  rownames_to_column(var = 'cname') %>% 
+  select(cname, Mc4r, Opcml, Trh, Nell2, 
+          Brinp3, Irs4, Lrfn5, Gpr101, 
+          Mbnl2, Nr3c2, Pura, Mbnl3, 
+          Ptn, Rora, Fos, Ghr, Ebf3, 
+          Cartpt, Nrxn3, Sstr2, 
+          Alk, Scgn,
+          Crh, Pgf) %>% 
+  arrange(-Mc4r, -Opcml, -Trh, -Nell2, 
+          -Brinp3, -Irs4, -Lrfn5, -Gpr101, 
+          -Mbnl2, -Nr3c2, -Pura, -Mbnl3, 
+          Ptn, Rora, Fos, Ghr, Ebf3, 
+          Cartpt, Nrxn3, Sstr2, 
+          Alk, Scgn,
+          Crh, Pgf) %>% 
+  .$cname
+
+p <- DoHeatmap(rar2020.srt.pub.pne, cells = custom_order, features = custom_genes, size = 3, assay = 'SCT', slot = 'scale.data')
+p
 ```
-
-## Particular combinations of markers in Mc4r containing cells (n sets = 10)
-
-```{r plot-upset-10, fig.width=9, fig.height=7, echo=FALSE}
-upset(as.data.frame(plot_data_filt), order.by = 'freq',
-      sets.x.label = 'Number of cells',
-      text.scale = c(2, 1.6, 2, 1.3, 2, 3),
-      nsets = 10)
-```
-
-## Particular combinations of markers in Mc4r containing cells (n sets = 5)
 
 ```{r plot-upset-5, fig.width=7, fig.height=6, echo=FALSE}
 upset(as.data.frame(plot_data_filt), order.by = 'freq',
@@ -245,188 +471,43 @@ upset(as.data.frame(plot_data_filt), order.by = 'freq',
       nsets = 5)
 ```
 
-## Particular combinations of markers in Mc4r containing cells (n sets = 3)
+```{r plot-upset-16, fig.width=12, fig.height=9, echo=FALSE}
+minim <- 
+  srt_mcrs_filtered %>% 
+  as_tibble() %>% 
+  dplyr::summarise(across(.fns = function(x) quantile(x, .1)))
 
-```{r plot-upset-3, fig.width=7, fig.height=6, echo=FALSE}
-upset(as.data.frame(plot_data_filt), order.by = 'freq',
+plot_data <-
+    (srt_mcrs_filtered > as.double(minim)) %>%
+    as_tibble() %>%
+    mutate_all(as.numeric)
+
+upset(as.data.frame(plot_data), order.by = 'freq',
       sets.x.label = 'Number of cells',
       text.scale = c(2, 1.6, 2, 1.3, 2, 3),
-      nsets = 3)
+      nsets = 10,
+      sets = c('Trh', 'Crh', 'Mc4r', 
+               'Ptn', 'Pura', 'Rora', 
+               'Scgn', 'Ebf3', 'Nr3c2', 
+               'Irs4', 'Gpr101', 'Sstr2', 
+               'Ghr', 'Opcml', 'Alk', 'Slc1a4'),
+      nintersects = 60)
 ```
 
-## Absolute correlation of Mc4r expression with Slc17a6
-
-```{r plot-Slc17a6-correlations, fig.width=7, fig.height=6, dpi=200}
-FeatureScatter(rar2020.srt.pvn, feature1 = "Mc4r", feature2 = "Slc17a6", slot = "scale.data")
-
+```{r plot-upset-10, fig.width=8, fig.height=7, echo=FALSE}
+upset(as.data.frame(plot_data), order.by = 'freq',
+      sets.x.label = 'Number of cells',
+      text.scale = c(2, 1.6, 2, 1.3, 2, 3),
+      nsets = 10,
+      sets = mcrs_age_corr_genes %>% 
+        filter(term %in% (plot_data %>% 
+                            colSums() %>% 
+                            sort() %>% 
+                            names())) %>% 
+        arrange(-Mc4r) %>% 
+        .$term %>% 
+        head(9) %>% 
+        c("Mc4r", .),
+      nintersects = 60)
 ```
 
-## Absolute correlation of Mc4r expression with Alk
-
-```{r plot-Alk-correlations, fig.width=7, fig.height=6, dpi=200}
-FeatureScatter(rar2020.srt.pvn, feature1 = "Mc4r", feature2 = "Alk", slot = "scale.data")
-
-```
-
-## Absolute correlation of Mc4r expression with Crh
-
-```{r plot-Crh-correlations, fig.width=7, fig.height=6, dpi=200}
-FeatureScatter(rar2020.srt.pvn, feature1 = "Mc4r", feature2 = "Crh", slot = "scale.data")
-
-```
-
-## Absolute correlation of Mc4r expression with Trh
-
-```{r plot-Trh-correlations, fig.width=7, fig.height=6, dpi=200}
-FeatureScatter(rar2020.srt.pvn, feature1 = "Mc4r", feature2 = "Trh", slot = "scale.data")
-```
-
-## Absolute correlation of Mc4r expression with Sst
-
-```{r plot-Sst-correlations, fig.width=7, fig.height=6, dpi=200}
-FeatureScatter(rar2020.srt.pvn, feature1 = "Mc4r", feature2 = "Sst", slot = "scale.data")
-```
-
-## Absolute correlation of Mc4r expression with Avp
-
-```{r plot-Avp-correlations, fig.width=7, fig.height=6, dpi=200}
-FeatureScatter(rar2020.srt.pvn, feature1 = "Mc4r", feature2 = "Avp", slot = "scale.data")
-```
-
-## Absolute correlation of Mc4r expression with Oxt
-
-```{r plot-Oxt-correlations, fig.width=7, fig.height=6, dpi=200}
-FeatureScatter(rar2020.srt.pvn, feature1 = "Mc4r", feature2 = "Oxt", slot = "scale.data")
-```
-
-## Density of Mc4r expressing cells in UMAP (cells similarity) space
-
-```{r plot-density-mc4r-umap, fig.width=7, fig.height=6, echo=FALSE, dpi=200}
-plot_density(rar2020.srt.pvn, "Mc4r") + DarkTheme()
-```
-
-## Density of expressing cells in UMAP space for whole MC-R gene family
-
-```{r plot-density-mcrs-on-original-umap, fig.width=21, fig.height=18, dpi=300, echo=FALSE}
-p.d <- plot_density(rar2020.srt.pub, "Mc4r") + DarkTheme()
-p.c <- plot_density(rar2020.srt.pub, "Mc3r") + DarkTheme()
-p.b <- plot_density(rar2020.srt.pub, "Mc2r") + DarkTheme()
-p.a <- plot_density(rar2020.srt.pub, "Mc1r") + DarkTheme()
-(p.a + p.b)/(p.c + p.d)
-```
-
-## Step back to estimate density of Mc4r and Alk expression across whole adult dataset
-
-```{r plot-density-c-mc4r-alk-on-original-umap, fig.width=21, fig.height=9, dpi=300}
-plot_density(rar2020.srt.pub, c("Mc4r", "Alk"), combine = F, joint = F) -> plots
-CombinePlots(lapply(X = plots, FUN = function(x) x + DarkTheme()), ncol = 2)
-```
-
-## Examine shared attributes density in PVN (example)
-
-```{r plot-density-cj-mc4r-alk-umap, fig.width=21, fig.height=6, dpi=300}
-plot_density(rar2020.srt.pvn, c("Mc4r", "Alk"), combine = F, joint = T) -> plots
-CombinePlots(lapply(X = plots, FUN = function(x) x + DarkTheme()), ncol = 3)
-```
-
-## Density of main PVN markers expressing cells -
-
-```{r plot-density-Sst-alk-umap, fig.width=7, fig.height=6, dpi=200, echo=FALSE}
-plot_density(rar2020.srt.pvn, "Sst") + DarkTheme()
-```
-
-## Density of main PVN markers expressing cells -
-
-```{r plot-density-Avp-alk-umap, fig.width=7, fig.height=6, dpi=200, echo=FALSE}
-plot_density(rar2020.srt.pvn, "Avp") + DarkTheme()
-```
-
-## Density of main PVN markers expressing cells -
-
-```{r plot-density-Oxt-alk-umap, fig.width=7, fig.height=6, dpi=200, echo=FALSE}
-plot_density(rar2020.srt.pvn, "Oxt") + DarkTheme()
-```
-
-## Density of main PVN markers expressing cells -
-
-```{r plot-density-Trh-alk-umap, fig.width=7, fig.height=6, dpi=200, echo=FALSE}
-plot_density(rar2020.srt.pvn, "Trh") + DarkTheme()
-```
-
-## Checking expectation for high density of shared Crh and Mc4r we again see contradiction
-
-```{r plot-density-cj-mc4r-crh-umap, fig.width=21, fig.height=6, dpi=300, echo=FALSE}
-plot_density(rar2020.srt.pvn, c("Mc4r", "Crh"), combine = F, joint = T) -> plots
-CombinePlots(lapply(X = plots, FUN = function(x) x + DarkTheme()), ncol = 3)
-```
-
-## It's on the edge
-
-```{r plot-density-j-mc4r-crh-umap, fig.width=14, fig.height=12, dpi=200, echo=FALSE}
-p_list <- plot_density(rar2020.srt.pvn, c("Mc4r", "Crh"), joint = TRUE, combine = FALSE)
-p_list[[length(p_list)]] + DarkTheme()
-```
-
-## Wierd Trh part of Crh cluster
-
-```{r plot-density-cj-trh-crh-umap, fig.width=21, fig.height=6, dpi=300, echo=FALSE}
-plot_density(rar2020.srt.pvn, c("Trh", "Crh"), combine = F, joint = T) -> plots
-CombinePlots(lapply(X = plots, FUN = function(x) x + DarkTheme()), ncol = 3)
-```
-
-## Small lyrical digression about Trh patterns: Onecut3+Trh density (1/4)
-
-```{r plot-density-j-onecut3-trh-umap, fig.width=14, fig.height=12, dpi=200, echo=FALSE}
-p_list <- plot_density(rar2020.srt.pvn, c("Onecut3", "Trh"), combine = F, joint = T)
-p_list[[length(p_list)]] + DarkTheme()
-```
-
-## Small lyrical digression about Trh patterns: Zic5+Trh density (2/4)
-
-```{r plot-density-j-zic5-trh-umap, fig.width=14, fig.height=12, dpi=200, echo=FALSE}
-p_list <- plot_density(rar2020.srt.pvn, c("Zic5", "Trh"), combine = F, joint = T)
-p_list[[length(p_list)]] + DarkTheme()
-```
-
-## Small lyrical digression about Trh patterns: Onecut3-\> Zic5 -\> Trh density (3/4)
-
-```{r plot-density-cj-onecut3-zic5-trh-on-original-umap, fig.width=21, fig.height=18, dpi=400, echo=FALSE}
-plot_density(rar2020.srt.pub, c("Onecut3", "Zic5", "Trh"), combine = F, joint = T) -> plots
-CombinePlots(lapply(X = plots, FUN = function(x) x + DarkTheme()), ncol = 2)
-```
-
-## Small lyrical digression about Trh patterns: Onecut3-\> Zic5 -\> Trh density (4/4)
-
-Excluded from original publication
-
-```{r rnascope-onecut3-zic5-trh}
-knitr::include_graphics(path = here::here('../deciphering-role-of-onecut3-transcription-factor-in-cell-fate-decisions/outputs/figures/onecut3-zic5-trh.png'), dpi = 500)
-```
-
-## Back to Mc4r: blend plots of Mc4r and Trh expression
-
-```{r plot-blend-mcr4-trh-umap, fig.width=28, fig.height=6, dpi=300, echo=FALSE}
-FeaturePlot(rar2020.srt.pvn, features = c("Mc4r", "Trh"), slot = "scale.data", order = TRUE, blend = TRUE, blend.threshold = 0.1) + DarkTheme()
-
-```
-
-## Back to Mc4r: blend plots of Mc4r and Crh expression
-
-```{r plot-blend-mcr4-crh-umap, fig.width=28, fig.height=6, dpi=300, echo=FALSE}
-FeaturePlot(rar2020.srt.pvn, features = c("Mc4r", "Crh"), slot = "scale.data", order = TRUE, blend = TRUE, blend.threshold = 0.1) + DarkTheme()
-```
-
-## Back to Mc4r: blend plots of Trh and Crh expression
-
-```{r plot-blend-trh-crh-umap, fig.width=28, fig.height=6, dpi=300, echo=FALSE}
-FeaturePlot(rar2020.srt.pvn, features = c("Trh", "Crh"), slot = "scale.data", order = TRUE, blend = TRUE, blend.threshold = 0.1) + DarkTheme()
-```
-
-## Back to Mc4r: Particular combinations of markers in PVN
-
-```{r make-upset-pvn, fig.height=8, fig.asp=.618, echo=FALSE}
-pltUpSet(gene = c('Mc4r', 'Crh', 'Trh'),
-         pop = rev(c('pneTRH', "mneVAS", 
-                     'pneCRH', "mneOXY", 'pneSS')),
-         pdata = plot_data3) + DarkTheme()
-```
