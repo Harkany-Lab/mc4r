@@ -1,8 +1,7 @@
 ---
 title: "Mc4r in postnatal mouse PVN"
 author: "Evgenii Tretiakov"
-date: "2021-05-18"
-output: beamer_presentation
+date: "2021-05-20"
 ---
 
 ```{r setup, include=FALSE}
@@ -35,8 +34,6 @@ suppressPackageStartupMessages({
     library(Seurat)
     library(SeuratWrappers)
     library(SeuratDisk)
-    library(pagoda2)
-    library(conos)
     library(UpSetR)
     library(patchwork)
     library(Nebulosa)
@@ -135,17 +132,17 @@ rar2020.srt.pub.pne <-
     subset(idents = c(24))
 
 
-DimPlot(rar2020.srt.pub, label = TRUE, cols = colours, repel = TRUE) + DarkTheme()
+DimPlot(rar2020.srt.pub, label = TRUE, cols = colours, repel = TRUE)
 
 ```
 
 ## Density of expression for MC-R gene family in UMAP space
 
 ```{r plot-density-mcrs-on-original-umap, fig.width=28, fig.height=24, dpi=300, echo=FALSE, warning=FALSE}
-p.d <- plot_density(rar2020.srt.pub, "Mc4r") + DarkTheme()
-p.c <- plot_density(rar2020.srt.pub, "Mc3r") + DarkTheme()
-p.b <- plot_density(rar2020.srt.pub, "Mc2r") + DarkTheme()
-p.a <- plot_density(rar2020.srt.pub, "Mc1r") + DarkTheme()
+p.d <- plot_density(rar2020.srt.pub, "Mc4r")
+p.c <- plot_density(rar2020.srt.pub, "Mc3r")
+p.b <- plot_density(rar2020.srt.pub, "Mc2r")
+p.a <- plot_density(rar2020.srt.pub, "Mc1r")
 (p.a + p.b)/(p.c + p.d)
 ```
 
@@ -158,7 +155,7 @@ AABB
 DDCC
 DDCC
 "
-p1 <- plot_density(rar2020.srt.pvn, "Mc4r") + DarkTheme()
+p1 <- plot_density(rar2020.srt.pvn, "Mc4r")
 
 p2Trh <- FeaturePlot(
     rar2020.srt.pvn,
@@ -171,8 +168,7 @@ p2Trh <- FeaturePlot(
 )
 
 p2 <- p2Trh[[3]] + 
-    NoLegend() + 
-    DarkTheme()
+    NoLegend()
 
 p2Crh <- FeaturePlot(
     rar2020.srt.pvn,
@@ -185,13 +181,12 @@ p2Crh <- FeaturePlot(
 )
 
 p3 <- p2Crh[[3]] + 
-    NoLegend() + 
-    DarkTheme()
+    NoLegend()
 
-p4 <- p2Trh[[1]] + NoLegend() + DarkTheme()
+p4 <- p2Trh[[1]] + NoLegend()
 
-p6 <- p2Trh[[4]] + NoLegend() + DarkTheme()
-p7 <- p2Crh[[4]] + NoLegend() + DarkTheme()
+p6 <- p2Trh[[4]] + NoLegend()
+p7 <- p2Crh[[4]] + NoLegend()
 
 
 p1 + p4 + p2 + p3 + p6 + p7 + plot_layout(design = pwlayout)
@@ -323,11 +318,13 @@ mcrs_age_corr_genes[mcrs_age_corr_genes$term %in% highlight_mcrs_age_corr_genes,
 ```
 
 
-```{r plot-mc4r-heatmap-by-age, fig.width=12, fig.asp=2, echo=FALSE, dpi=300, warning=FALSE}
+```{r plot-mc4r-heatmap-by-age, fig.width=12, fig.asp=2.2, echo=FALSE, dpi=300, warning=FALSE}
 plot_heatmap_mcrs_age_corr_genes <- 
   DoHeatmap(
     rar2020.srt.pub.pne,
-    features = c('Mc4r', highlight_mcrs_age_corr_genes),
+    features = c('Mc4r', highlight_mcrs_age_corr_genes %>% 
+                   .[str_detect(string = ., pattern = "^mt-", negate = T)] %>% 
+                   .[str_detect(string = ., pattern = "^Gm", negate = T)]),
     size = 3,
     assay = 'SCT',
     slot = 'scale.data',
@@ -471,7 +468,7 @@ upset(as.data.frame(plot_data_filt), order.by = 'freq',
       nsets = 5)
 ```
 
-```{r plot-upset-16, fig.width=12, fig.height=9, echo=FALSE}
+```{r plot-upset-16, fig.width=12, fig.height=11, echo=FALSE}
 minim <- 
   srt_mcrs_filtered %>% 
   as_tibble() %>% 

@@ -3,12 +3,18 @@ output_dir: ../docs
 navbar:
   title: "Mc4r in PVN Hypothalamus"
   left:
-  - text: Home
+  - text: "Home"
     href: index.html
-  - text: About
+  - text: "About"
     href: about.html
-  - text: License
+  - text: "License"
     href: license.html
+  - text: "Docs"
+    menu:
+      - text: "1st draft"
+      - href: 2021-05-14_pr_adult_pvn_neurons_mc4r.html
+      - text: "2nd draft"
+      - href: 2021-05-18_pr_adult_pvn_neurons_mc4r.html
 output:
   workflowr::wflow_html:
     toc: yes
