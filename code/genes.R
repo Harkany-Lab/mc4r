@@ -25,7 +25,7 @@ gaba       <- c('Gad1', 'Gad2', 'Slc32a1', 'Slc6a1')
 dopam      <- c('Th', 'Slc6a3', 'Slc18a2', 'Ddc',  'Slc18a3')
 ach        <- c('Chat', 'Slc18a3', 'Ache', 'Slc5a7')
 mcr_genes  <- c('Mc1r', 'Mc2r', 'Mc3r', 'Mc4r')
-pvn_genes  <- c('Trh', 'Crh', 'Mbnl3', 'Pgf', 'Irs4', 'Gpr101', 'Nr3c2', 'Agtr1')
+pvn_genes  <- c('Trh', 'Crh', 'Mbnl3', 'Pgf', 'Irs4', 'Gpr101', 'Nr3c2', 'Agtr1', 'Sst', 'Oxt')
 dmh_trh_g  <- c('Onecut3', 'Cartpt')
 
 gene_int <- c(npr, np, irs_genes, neurotrans, mcr_genes, pvn_genes, dmh_trh_g) %>% unique()

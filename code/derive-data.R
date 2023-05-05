@@ -24,6 +24,20 @@ suppressPackageStartupMessages({
     library(Nebulosa)
 })
 
+# Set paths
+src_dir    <- here::here('code')
+data_dir   <- here::here('data')
+output_dir <- here::here('output')
+plots_dir  <- here::here(output_dir, 'figures')
+tables_dir <- here::here(output_dir, 'tables')
+source(here::here(src_dir, 'main.R'))
+source(here::here(src_dir, 'genes.R'))
+
+# set seed
+reseed <- 42
+set.seed(seed = reseed)
+
+
 # set seed
 set.seed(seed = reseed)
 
@@ -70,6 +84,7 @@ readr::write_rds(
     file = here::here(tables_dir,
                       '2021-05-13_001-086-446-605-669_mm10-hypothalamus_srt4-obj-umap.rds'))
 SaveH5Seurat(object = rar2020.srt.pub,
+             overwrite = TRUE,
              filename = here::here(data_dir, "2021-05-13_001-086-446-605-669_mm10-hypothalamus_srt4-obj-umap.h5seurat"))
 rar2020.srt.pub$age %>% summary()
 rar2020.srt.pub$postnatal <-
@@ -82,6 +97,7 @@ readr::write_rds(
     file = here::here(tables_dir,
                       '2021-05-13_001-086-446-605-669_adult_mm10-hypothalamus_srt4-obj-umap.rds'))
 SaveH5Seurat(object = rar2020.srt.pub,
+             overwrite = TRUE,
              filename = here::here(data_dir, "2021-05-13_001-086-446-605-669_adult_mm10-hypothalamus_srt4-obj-umap.h5seurat"))
 # rar2020.srt.neuro <-
 #     subsetSrt(dat.srt = rar2020.srt.pub,
@@ -134,6 +150,7 @@ readr::write_rds(
     file = here::here(tables_dir,
                       '2021-05-13_001-086-446-605-669_adult_mm10-hypothalamus-pvn_alk-thinness-paper-subset-srt4-obj-umap.rds'))
 SaveH5Seurat(object = rar2020.srt.pvn.bck,
+             overwrite = TRUE,
              filename = here::here(data_dir, "2021-05-13_001-086-446-605-669_adult_mm10-hypothalamus-pvn_alk-thinness-paper-subset-srt4-obj-umap.h5seurat"))
 
 rar2020.srt.pvn %<>% subset(x = ., subset = UMAP_1 > 5)
@@ -150,6 +167,7 @@ readr::write_rds(
     file = here::here(tables_dir,
                       '2021-05-13_001-086-446-605-669_adult_mm10-hypothalamus-pvn_bottom-lh-excl-srt4-obj-sct-umap.rds'))
 SaveH5Seurat(object = rar2020.srt.pvn,
+             overwrite = TRUE,
              filename = here::here(data_dir, "2021-05-13_001-086-446-605-669_adult_mm10-hypothalamus-pvn_bottom-lh-excl-srt4-obj-sct-umap.h5seurat"))
 
 Idents(rar2020.srt.pvn) <- "ident"
@@ -175,8 +193,6 @@ markers_wtree_final <-
     all_markers_pvn_wtree_final %>%
     dplyr::filter(gene %in% c(gene_int)) %>%
     group_by(cluster) %>%
-    top_n(n = 12, wt = pct.1) %>%
-    top_n(n = 7, wt = avg_log2FC) %>%
     dplyr::ungroup() %>%
     dplyr::arrange(desc(pct.1)) %>%
     dplyr::distinct(gene, .keep_all = TRUE) %>%
@@ -195,12 +211,12 @@ readr::write_csv(
     file = here::here(tables_dir,
                       '2021-05-13_001-086-446-605-669_adult_mm10-hypothalamus-pvn_expr-mtx-cells-by-mrk-gns-int.csv'))
 
-minim <- srt_mcrs %>% as_tibble() %>% dplyr::summarise_each(funs = function(x) quantile(x, .3))
+minim <- srt_mcrs %>% as_tibble() %>% dplyr::summarise(across(everything(), ~ quantile(.x, .3)))
 
 plot_data <-
     (srt_mcrs > as.double(minim)) %>%
     as_tibble() %>%
-    mutate_all(as.numeric) %>%
+    dplyr::mutate(across(everything(), as.numeric)) %>%
     dplyr::select(-Avp, -Oxt)
 readr::write_csv(
     plot_data,
@@ -209,8 +225,8 @@ readr::write_csv(
 
 plot_data_filt <-
     (srt_mcrs > as.double(minim)) %>%
-    as_tibble() %>% filter(Mc4r > 0) %>%
-    mutate_all(as.numeric) %>%
+    as_tibble() %>% dplyr::filter(Mc4r > 0) %>%
+    dplyr::mutate(across(everything(), as.numeric)) %>%
     dplyr::select(-Avp, -Oxt, -Mc4r)
 readr::write_csv(
     plot_data_filt,
@@ -220,7 +236,7 @@ readr::write_csv(
 plot_data2 <-
     (srt_mcrs > as.double(minim)) %>%
     as_tibble() %>%
-    mutate_all(as.numeric) %>%
+    dplyr::mutate(across(everything(), as.numeric)) %>%
     mutate('Cell_type' = Idents(rar2020.srt.pvn),
            'Cell_name' = colnames(rar2020.srt.pvn)) %>%
     as_tibble()
@@ -234,7 +250,7 @@ readr::write_csv(
     file = here::here(tables_dir,
                       '2021-05-13_001-086-446-605-669_adult_mm10-hypothalamus-pvn_ncells-long-by-mrk-gns-int-ctypes.csv'))
 
-rar2020.srt.pub <-
+rar2020.srt.pub.all <-
     readr::read_rds(here::here(tables_dir,
                                '2021-05-13_001-086-446-605-669_mm10-hypothalamus_srt4-obj-umap.rds'))
 rar2020.srt.pub <-

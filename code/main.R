@@ -60,6 +60,30 @@ subsetSrt <- function(dat.srt, srt.name, checkmd = TRUE, ...) {
     return(dat.srt)
 }
 
+#' Save plot
+sPlot <- function(name, plt, type, h = 10, asp = 1.618, path = plots_dir, format = ".pdf") {
+    cowplot::save_plot(filename = here::here(path,
+                                             stringr::str_glue(type,
+                                                               as.character(name),
+                                                               format,
+                                                               .sep = "_")),
+                       plot = plt,
+                       base_height = h,
+                       base_asp = asp,
+                       limitsize = FALSE)
+}
+
+ssPlot <- function(name, type, h = 10, asp = 1.618, path = plots_dir, format = ".pdf") {
+    cowplot::ggsave2(filename = here::here(path,
+                                             stringr::str_glue(type,
+                                                               as.character(name),
+                                                               format,
+                                                               .sep = "_")),
+                       height = h,
+                       width =  asp * h,
+                       limitsize = FALSE)
+}
+
 ## plot gene within cell population
 pltUpSet <- function(gene = "Alk", pop = 'pneSS', pdata = plot_data3) {
     UpSetR::upset(as.data.frame(pdata),
